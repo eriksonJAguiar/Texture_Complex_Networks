@@ -4,17 +4,26 @@ import numpy as np
 import networkx as nx
 import matplotlib.pyplot as plt
 #from sklearn.feature_extraction import image
-#from PIL import Image
+from PIL import Image
 #from scipy.spatial import distance
-#import pydicom
+import pydicom
 from oct2py import octave
 import math
 import collections
+from sklearn.feature_extraction import image
+import gc
 
 #params:
 ## path: local da imagem
 ## opc: opção para utilizar as seções da imagem ou imagem inteira
-def load_dicom(path, opc):
+def load_dicompy(path):
+   ds = pydicom.read_file(path)
+
+   array = np.array(ds.pixel_array, dtype=np.uint8)
+
+   return [array]
+
+def load_dicom_script(path, opc):
 
     octave.addpath('/home/erikson/Documentos/Texture_Complex_Networks/Matlab')
 
@@ -29,17 +38,39 @@ def load_dicom(path, opc):
         sections = [img, img2, img3, img4]
     
     return sections
+
+def load_img(path):
+
+    im = Image.open(path).convert('L')
+
+    im2 = np.asarray(im)
+
+    section = [im2]
+
+    return section
+
+def convert2graph(imgs):
     
+    grs = []
+    
+    for im in imgs:
+        gr = image.img_to_graph(im)
+        grs.append(gr)
+    
+    return grs 
+
 #params:
 ## sections: Seções da imagem
 ## opc: quando verdadeiro salva a imagem do grafo
 def calc_weights(sections, opc=False):
     s = 1
     gs = []
+    log_w = []
     for sec in sections:
         print('Iniciando o grafo da secção %i ...'%(s))
         col = sec[0].size
         row = int(sec.size/col)
+        #col, row = sec.size
     
         i = 0
         j = 0
@@ -48,7 +79,8 @@ def calc_weights(sections, opc=False):
         
         np.seterr(over="ignore")
         
-        r = 3
+        r = 2
+        t = 0.9
     
         # pospx = [i,j] e intespx. representando o pixel
         pxdic = dict()
@@ -57,9 +89,11 @@ def calc_weights(sections, opc=False):
         print("Iniciando calculo dos pesos...")
     
         cont = 0
-        for i in range(0, row - 1):
-            for j in range(0, col - 1):
-                ind = [i+1, j, i, j+1, i+1, j+1]
+        for i in range(1, row - 2):
+            for j in range(1, col - 2):
+                #ind = [i+1, j, i, j+1, i+1, j+1]
+                ind = [i+1, j, i, j+1, i+1, j+1, i-1, j-1, i-1, j, i+1, j+1, i, j-1, i-1, j+1]
+                #ind = r * [i-1, j, i,j-1, i+1, j, i, j+1]
                 base = cont
                 pxdic[cont] = dict()
                 pxdic[cont]['pospx'] = [i, j]
@@ -68,17 +102,23 @@ def calc_weights(sections, opc=False):
                 for k in range(0, int(len(ind)/2)):
                     d = 0
                     d = math.sqrt(((ind[k] - i) ** 2) + ((ind[k+1] - j) ** 2))
-                    if d <= r:
+                    w = (255 - math.fabs(sec[i][j] - sec[ind[k]][ind[k+1]]))/255
+                    log_w.append(w)
+                    if d <= r and w <= 0.9:
                         cont += 1
                         G.add_node(cont)
                         pxdic[cont] = dict()
                         pxdic[cont]['pospx'] = [k, k+1]
                         pxdic[cont]['intespx'] = sec[k][k+1]
-                        w = round(((ind[k] - i)**2 + (ind[k+1] - j)**2 + ((r**2)*((math.fabs(sec[i][j] - sec[ind[k]][ind[k+1]]))/255))/(2*(r**2))), 4) 
+                        #w = ((((ind[k] - i)**2) + ((ind[k+1] - j)**2)) + ((r**2)*((math.fabs(sec[i][j] - sec[ind[k]][ind[k+1]]))/255))/(2*(r**2))) 
                         G.add_edge(base, cont, weight=w)
-         
+                
+                
+            
         
-        print("Calculo do pesos finalizado.")
+        print("Calculo dos pesos finalizado.")
+         
+        #gc.collect()
         
         gs.append(G)
         
@@ -91,6 +131,10 @@ def calc_weights(sections, opc=False):
         
         s += 1
     
+    with open('pesos.log', 'a') as out:
+        np.savetxt(out, log_w, fmt='%4.1f')
+
+    
     return gs
 
 #params:
@@ -98,36 +142,37 @@ def calc_weights(sections, opc=False):
 ## opc: quando verdadeiro exibe o grafico do histograma 
 def calc_histDeg(G, opc=False):
     
-    degree_sequence = sorted([d for n, d in G.degree()], reverse=False)
-    degreeCount = collections.Counter(degree_sequence)
-    deg, cnt = zip(*degreeCount.items())
+    #degree_sequence = sorted([d for n, d in G.degree()], reverse=False)
+    #degreeCount = collections.Counter(degree_sequence)
+    #deg, cnt = zip(*degreeCount.items())
     
-    fig, ax = plt.subplots()
-    plt.bar(deg, cnt, width=0.80, color='b')
+    #if opc == True:
+    #    fig, ax = plt.subplots()
+    #    plt.bar(deg, cnt, width=0.80, color='b')
+    #    plt.title("Degree Histogram")
+    #    plt.ylabel("Count")
+    #    plt.xlabel("Degree")
+    #    ax.set_xticks([d + 0.4 for d in deg])
+    #    ax.set_xticklabels(deg)
+    #    plt.show()
     
-    if opc == True:
-        plt.title("Degree Histogram")
-        plt.ylabel("Count")
-        plt.xlabel("Degree")
-        ax.set_xticks([d + 0.4 for d in deg])
-        ax.set_xticklabels(deg)
-    
-        plt.show()
-    
-    return (deg, cnt)
+    hdeg = nx.degree_histogram(G)
 
-def dens_prob(hi):
+    return hdeg
+
+def dens_prob(hst):
     
     dens = []
     
-    for i in hi:
-        d = (i/sum(hi))
-        dens.append(d)
+    for i in hst:
+        d = round((i/sum(hst)),4)
+        if d > 0:
+            dens.append(d)
     
     return dens
 
 
-def metrics_rc(pi):
+def metrics_rc(d_prob):
     
     mean = 0
     entropy = 0
@@ -135,11 +180,11 @@ def metrics_rc(pi):
     contrast = 0
     
     index = 0
-    for i in pi:
-        mean += index * i
-        contrast += i * (index**2)  
-        energy += (i**2)
-        entropy += i * math.log2(i)
+    for k in d_prob:
+        mean += index * k
+        contrast += k * (index**2)  
+        energy += (k ** 2)
+        entropy += k * math.log2(k)
         
         index += 1
     
@@ -152,19 +197,27 @@ if __name__ == '__main__':
     
     print("Iniciando o algoritmo...")
     
-    sections = load_dicom('/home/erikson/Documentos/Dataset/LUNG1-001/09-18-2008-StudyID-69331/0-82046/000001.dcm', opc=1)
+    #sections = load_dicom_script('/home/erikson/Documentos/Dataset/LUNG1-010/01-01-2014-StudyID-54264/1-08510/000011.dcm', opc=1)
+
+    #sections = load_dicompy('/home/erikson/Documentos/Dataset/LUNG1-003/01-01-2014-StudyID-34270/1-28595/000035.dcm')
     
+    sections = load_img("/home/erikson/Documentos/Texture_Complex_Networks/laranja.png")
+
     print("Script matlab processado.")
     
-    graphs = calc_weights(sections)
+    #gfs = convert2graph(sections)
+    
+    gfs = calc_weights(sections)
     
     g_metric = []
     
     index = 0
-    for g in graphs:
+    for g in gfs:
         d_prob = []
-        d, c = calc_histDeg(g)
+        d = calc_histDeg(g)
+        #print(d)
         d_prob = dens_prob(d)
+        #print(d_prob)
         me,etr,enr,ctr = metrics_rc(d_prob)
         gm = dict()
         gm['mean'] = me
@@ -175,6 +228,8 @@ if __name__ == '__main__':
       
     
     print(g_metric)
+
+    gc.collect()
     
     print("Algoritmo finalizado!!!")
     

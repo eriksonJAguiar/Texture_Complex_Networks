@@ -32,7 +32,25 @@ function [imgray] = dicom2gray (image_dicom)
   
   im = dicomread(image_dicom);
   im2 = im2uint8(im);
-  imgray = imadjust(im2, stretchlim(im2, 0), []);
+  aux_imgray = imadjust(im2, stretchlim(im2, 0), []);
+  
+  [x,y] = find(aux_imgray == 0);
+  
+  xmin = min(x);
+  xmax = max(x);
+  ymin = min(y);
+  ymax = max(y);
+  
+  imgray = aux_imgray(xmin:xmax,ymin:ymax);
+  
+  %row = size(gray_image,1);
+  %col = size(gray_image,2);
+  
+  %for i=0:(row - 1)
+   % for j=0:(col-1)
+      
+    %end
+  %end
   
   %imgray = im2double(im);
   %/home/erikson/Documentos/Dataset/LUNG1-001/09-18-2008-StudyID-69331/0-82046/000001.dcm'
