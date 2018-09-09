@@ -101,9 +101,11 @@ def calc_weights(sections, opc=False):
                 G.add_node(cont)
                 for k in range(0, int(len(ind)/2)):
                     d = 0
-                    d = math.sqrt(((ind[k] - i) ** 2) + ((ind[k+1] - j) ** 2))
+                    #d = math.sqrt(((ind[k] - i) ** 2) + ((ind[k+1] - j) ** 2))
                     #w = (255 - math.fabs(sec[i][j] - sec[ind[k]][ind[k+1]]))/255
-                    w = ((((ind[k] - i)**2) + ((ind[k+1] - j)**2)) + ((r**2)*((math.fabs(sec[i][j] - sec[ind[k]][ind[k+1]]))/255))/(2*(r**2)))
+                    #w = ((((ind[k] - i)**2) + ((ind[k+1] - j)**2)) + ((r**2)*((math.fabs(sec[i][j] - sec[ind[k]][ind[k+1]]))/255))/(2*(r**2)))
+                    d = (((ind[k] - i) ** 2) + ((ind[k+1] - j) ** 2)) + ((sec[i][j] - sec[ind[k]][ind[k+1]]) ** 2)
+                    w = ((d/(255)**2)-(r ** 2))
                     log_w.append(w)
                     if d <= r and w <= 0.9:
                         cont += 1
