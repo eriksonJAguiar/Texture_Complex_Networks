@@ -102,7 +102,8 @@ def calc_weights(sections, opc=False):
                 for k in range(0, int(len(ind)/2)):
                     d = 0
                     d = math.sqrt(((ind[k] - i) ** 2) + ((ind[k+1] - j) ** 2))
-                    w = (255 - math.fabs(sec[i][j] - sec[ind[k]][ind[k+1]]))/255
+                    #w = (255 - math.fabs(sec[i][j] - sec[ind[k]][ind[k+1]]))/255
+                    w = ((((ind[k] - i)**2) + ((ind[k+1] - j)**2)) + ((r**2)*((math.fabs(sec[i][j] - sec[ind[k]][ind[k+1]]))/255))/(2*(r**2)))
                     log_w.append(w)
                     if d <= r and w <= 0.9:
                         cont += 1
@@ -142,7 +143,7 @@ def calc_weights(sections, opc=False):
 ## opc: quando verdadeiro exibe o grafico do histograma 
 def calc_histDeg(G, opc=False):
     
-    #degree_sequence = sorted([d for n, d in G.degree()], reverse=False)
+    #degree_sequence = [d for n, d in G.degree()]
     #degreeCount = collections.Counter(degree_sequence)
     #deg, cnt = zip(*degreeCount.items())
     
@@ -155,6 +156,14 @@ def calc_histDeg(G, opc=False):
     #    ax.set_xticks([d + 0.4 for d in deg])
     #    ax.set_xticklabels(deg)
     #    plt.show()
+    
+    #centDeg = nx.degree_centrality(G)
+    #degreeCount = collections.Counter(centDeg)
+    #deg, cnt = zip(*degreeCount.items())
+
+    #print(deg)
+
+    #print(cnt)
     
     hdeg = nx.degree_histogram(G)
 
@@ -197,11 +206,11 @@ if __name__ == '__main__':
     
     print("Iniciando o algoritmo...")
     
-    #sections = load_dicom_script('/home/erikson/Documentos/Dataset/LUNG1-010/01-01-2014-StudyID-54264/1-08510/000011.dcm', opc=1)
+    sections = load_dicom_script('/home/erikson/Documentos/Dataset/LUNG1-010/01-01-2014-StudyID-54264/1-08510/000011.dcm', opc=2)
 
     #sections = load_dicompy('/home/erikson/Documentos/Dataset/LUNG1-003/01-01-2014-StudyID-34270/1-28595/000035.dcm')
     
-    sections = load_img("/home/erikson/Documentos/Texture_Complex_Networks/laranja.png")
+    #sections = load_img("/home/erikson/Documentos/Texture_Complex_Networks/laranja.png")
 
     print("Script matlab processado.")
     
