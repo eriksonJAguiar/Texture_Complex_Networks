@@ -16,12 +16,33 @@ import gc
 #params:
 ## path: local da imagem
 ## opc: opção para utilizar as seções da imagem ou imagem inteira
-def load_dicompy(path):
-   ds = pydicom.read_file(path)
+def load_dicompy(path, slices=False):
+    ds = pydicom.read_file(path)
 
-   array = np.array(ds.pixel_array, dtype=np.uint8)
+    array = []
 
-   return [array]
+    imgray = np.array(ds.pixel_array, dtype=np.uint8)
+
+    if slices == True:
+       
+       row = np.size(imgray,0)
+       col = np.size(imgray,1)
+       
+       s = int(row/4)
+       s1 = int(col/4)
+
+
+       array.append(imgray[1:s,1:s1])
+       array.append(imgray[s:(2*s),s1:(2*s1)])
+       array.append(imgray[(2*s):(3*s),(2*s1):(3*s1)])
+       array.append(imgray[(3*s):(4*s),(3*s1):(4*s1)])
+    
+    else:
+        array.append(imgray)
+
+    
+
+    return array
 
 def load_dicom_script(path, opc):
 
@@ -68,9 +89,8 @@ def calc_weights(sections, opc=False):
     log_w = []
     for sec in sections:
         print('Iniciando o grafo da secção %i ...'%(s))
-        col = sec[0].size
-        row = int(sec.size/col)
-        #col, row = sec.size
+        row = np.size(sec,0)
+        col = np.size(sec,1)
     
         i = 0
         j = 0
@@ -107,7 +127,7 @@ def calc_weights(sections, opc=False):
                     d = (((ind[k] - i) ** 2) + ((ind[k+1] - j) ** 2)) + ((sec[i][j] - sec[ind[k]][ind[k+1]]) ** 2)
                     w = ((d/(255)**2)-(r ** 2))
                     log_w.append(w)
-                    if d <= r and w <= 0.9:
+                    if d <= r and w <= t:
                         cont += 1
                         G.add_node(cont)
                         pxdic[cont] = dict()
@@ -116,8 +136,6 @@ def calc_weights(sections, opc=False):
                         #w = ((((ind[k] - i)**2) + ((ind[k+1] - j)**2)) + ((r**2)*((math.fabs(sec[i][j] - sec[ind[k]][ind[k+1]]))/255))/(2*(r**2))) 
                         G.add_edge(base, cont, weight=w)
                 
-                
-            
         
         print("Calculo dos pesos finalizado.")
          
@@ -208,9 +226,9 @@ if __name__ == '__main__':
     
     print("Iniciando o algoritmo...")
     
-    sections = load_dicom_script('/home/erikson/Documentos/Dataset/LUNG1-010/01-01-2014-StudyID-54264/1-08510/000011.dcm', opc=2)
+    #sections = load_dicom_script('/Users/erjulioaguiar/Documents/siim-medical-image-analysis-tutorial/dicom_dir/ID_0003_AGE_0075_CONTRAST_1_CT.dcm', opc=2)
 
-    #sections = load_dicompy('/home/erikson/Documentos/Dataset/LUNG1-003/01-01-2014-StudyID-34270/1-28595/000035.dcm')
+    sections = load_dicompy('/Users/erjulioaguiar/Documents/siim-medical-image-analysis-tutorial/dicom_dir/ID_0069_AGE_0074_CONTRAST_0_CT.dcm', slices=True)
     
     #sections = load_img("/home/erikson/Documentos/Texture_Complex_Networks/laranja.png")
 
@@ -230,12 +248,8 @@ if __name__ == '__main__':
         d_prob = dens_prob(d)
         #print(d_prob)
         me,etr,enr,ctr = metrics_rc(d_prob)
-        gm = dict()
-        gm['mean'] = me
-        gm['entropy'] = etr
-        gm['energy'] = enr
-        gm['contrast'] = ctr
-        g_metric.append(gm)
+        m_aux = [me, etr, enr, ctr]
+        g_metric += m_aux
       
     
     print(g_metric)
