@@ -40,7 +40,7 @@ def load_dicompy(path, slices=False):
     else:
         array.append(imgray)
 
-    
+    print("Script de aquisicao da imagem processado.")
 
     return array
 
@@ -57,6 +57,9 @@ def load_dicom_script(path, opc):
     if opc == 2:
         img, img2, img3, img4 = octave.dicom2grayMulti(path, nout=4)
         sections = [img, img2, img3, img4]
+
+    
+    print("Script matlab processado.")
     
     return sections
 
@@ -138,8 +141,6 @@ def calc_weights(sections, opc=False):
                 
         
         print("Calculo dos pesos finalizado.")
-         
-        #gc.collect()
         
         gs.append(G)
         
@@ -148,7 +149,7 @@ def calc_weights(sections, opc=False):
             f = plt.figure()
             nx.draw(G)
             f.savefig('grafo_sec%i.png'%(s))
-        #plt.show()
+            #plt.show()
         
         s += 1
     
@@ -231,8 +232,6 @@ if __name__ == '__main__':
     sections = load_dicompy('/Users/erjulioaguiar/Documents/siim-medical-image-analysis-tutorial/dicom_dir/ID_0069_AGE_0074_CONTRAST_0_CT.dcm', slices=True)
     
     #sections = load_img("/home/erikson/Documentos/Texture_Complex_Networks/laranja.png")
-
-    print("Script matlab processado.")
     
     #gfs = convert2graph(sections)
     
@@ -244,9 +243,7 @@ if __name__ == '__main__':
     for g in gfs:
         d_prob = []
         d = calc_histDeg(g)
-        #print(d)
         d_prob = dens_prob(d)
-        #print(d_prob)
         me,etr,enr,ctr = metrics_rc(d_prob)
         m_aux = [me, etr, enr, ctr]
         g_metric += m_aux
