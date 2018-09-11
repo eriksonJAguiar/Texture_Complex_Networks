@@ -335,7 +335,7 @@ class texture_features_RC:
             
             index += 1
         
-        entropy *= (-1)
+        entropy *= -1
         
         return (mean,entropy,energy,contrast)
         

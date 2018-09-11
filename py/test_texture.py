@@ -6,6 +6,8 @@ import skimage.feature as ft
 import pandas as pd
 import statistics
 import time
+from operator import itemgetter
+from datetime import datetime as dt
 
 #classificacao
 from sklearn.ensemble import RandomForestClassifier
@@ -19,9 +21,29 @@ from sklearn.model_selection import cross_val_predict, KFold,GroupKFold
 
 from _thread import start_new_thread, allocate_lock
 import threading
-num_threads = 0
-thread_started = False
-lock = allocate_lock()
+
+
+logs_metricas = []
+
+
+def write_csv(data,file):
+		df = pd.DataFrame(data)
+		df.to_csv('../logs/'+file+'.csv', mode='a', sep=';',index=False, header=False)
+
+
+def read_csv(file):
+
+		df1 = pd.DataFrame.from_csv('../dataset/%s'%(file),sep=';',index_col=0,encoding ='ISO-8859-1')
+
+		df1 = df1.reset_index()
+
+		return df1
+
+def write_txt(data):
+
+    with open('features.log', 'w') as out:
+       np.savetxt(out, data, '%4.6f')
+
 
 def clf_randomForest(X,target):
 
@@ -40,11 +62,11 @@ def clf_randomForest(X,target):
     
     for train_index,teste_index in kf.split(X,target):
         
-        X_train, X_test = X[train_index],X[teste_index]
-        y_train, y_test = target[train_index], target[teste_index]
+        
+        X_train, X_test = list(itemgetter(*train_index)(X)), list(itemgetter(*teste_index)(X))
+        y_train, y_test = list(itemgetter(*train_index)(target)), list(itemgetter(*teste_index)(target))
         clf_rf.fit(X_train,y_train)
         pred = clf_rf.predict(X_test)
-        predicts += pred
         ac = accuracy_score(y_test, pred)
         p = precision_score(y_test, pred,average='weighted')
         r = recall_score(y_test, pred,average='weighted')
@@ -68,14 +90,6 @@ def clf_randomForest(X,target):
 
     return (ac,p,f1,r,e)
 
-
-def read_csv(file):
-
-		df1 = pd.DataFrame.from_csv('../dataset/%s'%(file),sep=';',index_col=0,encoding ='ISO-8859-1')
-
-		df1 = df1.reset_index()
-
-		return df1
 
 def convert_df(df):
 
@@ -115,17 +129,21 @@ def test_lbp(imgs_dicom,target):
 
     features_lbp = []
 
+    print('Iniciando extração de caracteristicas com LBP...')
+
     for im in imgs_dicom:
-        print('Calc LBP')
+        #print('Calc LBP')
         lbp = ft.local_binary_pattern(im[0], P, R, METHOD)
         flbp, _ = np.histogram(lbp, normed=True, bins=P + 2, range=(0, P + 2))
-        features_lbp.append(flbp)
-
-    print(features_lbp)    
+        features_lbp.append(flbp.tolist())    
     
     print('Test LBP...')
 
     ac,p,f1,r,e = clf_randomForest(features_lbp,target)
+
+    l = 'lbp', ac,p,f1,r,e, str(dt.now())
+
+    logs_metricas.append(l)
 
     print('Acuracia = %f'%(ac))
 
@@ -146,16 +164,48 @@ def test_rc(imgs_dicom, target):
 
     features_rc = []
 
+
+    print('Iniciando extração de caracteristicas com RC...')
+
+    count = 0
     for im in imgs_dicom:
-        print('Calc RC')
+        count += 1
+        print('%i'%(count))
         secs = crop_slices(im[0])
         frc = rc.extract_texture(secs)
         features_rc.append(frc)
+        write_txt(features_rc)
 
     
     print('Test RC...')
 
     ac,p,f1,r,e = clf_randomForest(features_rc,target)
+
+    l = 'rc', ac,p,f1,r,e, str(dt.now())
+
+    logs_metricas.append(l)
+
+    print('Acuracia = %f'%(ac))
+
+    print('Precisao = %f'%(p))
+
+    print('Recall = %f'%(r))
+
+    print('Erro = %f'%(e))
+
+    print('Test RC Finalizado.')
+
+    time.sleep(5)
+
+def test_rc_preLoad(features_rc, target):
+
+    print('Test RC...')
+
+    ac,p,f1,r,e = clf_randomForest(features_rc,target)
+
+    l = 'rc', ac,p,f1,r,e, str(dt.now())
+
+    logs_metricas.append(l)
 
     print('Acuracia = %f'%(ac))
 
@@ -169,11 +219,12 @@ def test_rc(imgs_dicom, target):
 
     time.sleep(5)
     
-    
-
 
 if __name__ == '__main__':
     
+    
+    print("Iniciando do algoritmo...")
+
     datas = read_csv('overview.csv')
 
     df = convert_df(datas['Contrast'])
@@ -188,27 +239,35 @@ if __name__ == '__main__':
 
     imgs_dicom = []  
 
-    c = 0
+    print("Carregando as imagens...")
+    
     for name in datas['dicom_name']:
         imgs = rc.load_dicompy('../dataset/dicom_dir/%s'%(name))
         imgs_dicom.append(imgs)
-        if c <= 4:
-            break
-        
-        c += 1
-
-    
-    t1 = threading.Thread(target=test_lbp,args=(imgs_dicom,datas['Contrast'][:4]))
-    t1.start()
-
-    t2 = threading.Thread(target=test_rc,args=(imgs_dicom,datas['Contrast'][:4]))
-    t2.start()
     
 
-    t1.join()
-    t2.join()
+    #print("Executando Thread 1 - LBP ... ")
+    #t1 = threading.Thread(target=test_lbp,args=(imgs_dicom,datas['Contrast'][:4]))
+    #t1.start()
+
+    #print("Executando Thread 2 - RC ... ")
+    #t2 = threading.Thread(target=test_rc,args=(imgs_dicom,datas['Contrast'][:4]))
+    #t2.start()
+    
+
+    #t1.join()
+    #t2.join()
 
     
+    features = 
+    
+    test_rc_preLoad(imgs_dicom,datas['Contrast'])
+    
+    test_lbp(imgs_dicom,datas['Contrast'])
+
+    
+
+    write_csv(logs_metricas,'metricas')
 
     #extracao de caracteristicas com o LBP e RC
     #for im in imgs_dicom:
