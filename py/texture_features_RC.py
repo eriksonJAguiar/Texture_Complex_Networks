@@ -7,9 +7,11 @@ from oct2py import octave
 import math
 import collections
 from sklearn.feature_extraction import image
-import gc
 
-class texture_features_RC():
+class texture_features_RC:
+
+    def __init__(self):
+        pass
 
     #carrega a imagem dicom a partir da biblioteca pydicom
     #params:
@@ -24,18 +26,18 @@ class texture_features_RC():
 
         if slices == True:
         
-        row = np.size(imgray,0)
-        col = np.size(imgray,1)
-        
-        s = int(row/4)
-        s1 = int(col/4)
+            row = np.size(imgray,0)
+            col = np.size(imgray,1)
+            
+            s = int(row/4)
+            s1 = int(col/4)
 
-        
-        array.append(imgray)
-        array.append(imgray[1:s,1:s1])
-        array.append(imgray[s:(2*s),s1:(2*s1)])
-        array.append(imgray[(2*s):(3*s),(2*s1):(3*s1)])
-        array.append(imgray[(3*s):(4*s),(3*s1):(4*s1)])
+            
+            array.append(imgray)
+            array.append(imgray[1:s,1:s1])
+            array.append(imgray[s:(2*s),s1:(2*s1)])
+            array.append(imgray[(2*s):(3*s),(2*s1):(3*s1)])
+            array.append(imgray[(3*s):(4*s),(3*s1):(4*s1)])
         
         else:
             array.append(imgray)
@@ -70,7 +72,7 @@ class texture_features_RC():
     #funcao carrega uma imagem png
     #params:
     ## path: caminho da imagem
-    def load_img(path):
+    def load_img(self,path):
 
         im = Image.open(path).convert('L')
 
@@ -306,7 +308,7 @@ class texture_features_RC():
         
         return hdeg
 
-    def dens_prob(hst):
+    def dens_prob(self, hst):
         
         dens = []
         
@@ -340,11 +342,8 @@ class texture_features_RC():
         
 
     #params:
-    ## path: caminho da imagem
-    ## type_img: (1) carrega imagem biblioteca dicom python
-    ##  (2) carrega a imagem a partir de um script matlab
-    ##  (3) carrega aimagem a partir de uma imagem conversional
-    def extract_texture(self, path, type_img=1):
+    ## img: passa as secoes da imagem
+    def extract_texture(self, img):
         
         print("Iniciando o algoritmo...")
         
@@ -352,33 +351,24 @@ class texture_features_RC():
         
         #/home/erikson/Documentos/Dataset/LUNG1-001/09-18-2008-StudyID-69331/0-82046/000035.dcm
 
-        if type_img == 1:
-            sections = load_dicompy(path, slices=True)
-
-        elif type_img == 1:
-            sections = load_dicom_script(path, opc=2)
-
-        else:
-            sections = load_img(path)
-
-
-        
-        gfs = calc_weights_default(sections)
+        sections = img
+ 
+        gfs = self.calc_weights_default(sections)
         
         g_metric = []
         
         index = 0
         for g in gfs:
             d_prob = []
-            d = calc_histDeg(g)
-            d_prob = dens_prob(d)
-            me,etr,enr,ctr = metrics_rc(d_prob)
+            d = self.calc_histDeg(g)
+            d_prob = self.dens_prob(d)
+            me,etr,enr,ctr = self.metrics_rc(d_prob)
             m_aux = [me, etr, enr, ctr]
             g_metric += m_aux
         
         
-        print(g_metric)
-
-        gc.collect()
+        #print(g_metric)
         
         print("Algoritmo finalizado!!!")
+
+        return g_metric
