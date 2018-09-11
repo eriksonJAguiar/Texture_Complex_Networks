@@ -42,7 +42,7 @@ class texture_features_RC:
         else:
             array.append(imgray)
 
-        print("Script de aquisicao da imagem processado.")
+        #print("Script de aquisicao da imagem processado.")
 
         return array
 
@@ -65,7 +65,7 @@ class texture_features_RC:
             sections = [img, img2, img3, img4]
 
         
-        print("Script matlab processado.")
+        #print("Script matlab processado.")
         
         return sections
 
@@ -90,7 +90,7 @@ class texture_features_RC:
         gs = []
         log_w = []
         for sec in sections:
-            print('Iniciando o grafo da secção %i ...'%(s))
+            #print('Iniciando o grafo da secção %i ...'%(s))
             row = np.size(sec,0)
             col = np.size(sec,1)
         
@@ -108,7 +108,7 @@ class texture_features_RC:
             pxdic = dict()
         
         
-            print("Iniciando calculo dos pesos...")
+            #print("Iniciando calculo dos pesos...")
         
             cont = 0
             for i in range(1, row - 2):
@@ -135,7 +135,7 @@ class texture_features_RC:
                             G.add_edge(base, cont, weight=w)
                     
             
-            print("Calculo dos pesos finalizado.")
+            #print("Calculo dos pesos finalizado.")
             
             gs.append(G)
             
@@ -157,9 +157,8 @@ class texture_features_RC:
     def weights_euclidian_p1(self,sections, opc=False, r=2,t=0.9):
         s = 1
         gs = []
-        log_w = []
         for sec in sections:
-            print('Iniciando o grafo da secção %i ...'%(s))
+            #print('Iniciando o grafo da secção %i ...'%(s))
             row = np.size(sec,0)
             col = np.size(sec,1)
         
@@ -174,7 +173,7 @@ class texture_features_RC:
             pxdic = dict()
         
         
-            print("Iniciando calculo dos pesos...")
+            #print("Iniciando calculo dos pesos...")
         
             cont = 0
             for i in range(1, row - 2):
@@ -200,7 +199,7 @@ class texture_features_RC:
                             G.add_edge(base, cont, weight=w)
                     
             
-            print("Calculo dos pesos finalizado.")
+            #print("Calculo dos pesos finalizado.")
             
             gs.append(G)
             
@@ -345,7 +344,7 @@ class texture_features_RC:
     ## img: passa as secoes da imagem
     def extract_texture(self, img):
         
-        print("Iniciando o algoritmo...")
+        #print("Iniciando o algoritmo...")
         
         #/Users/erjulioaguiar/Documents/siim-medical-image-analysis-tutorial/dicom_dir/ID_0069_AGE_0074_CONTRAST_0_CT.dcm
         
@@ -369,6 +368,6 @@ class texture_features_RC:
         
         #print(g_metric)
         
-        print("Algoritmo finalizado!!!")
+        #print("Algoritmo finalizado!!!")
 
         return g_metric
