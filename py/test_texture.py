@@ -17,6 +17,7 @@ from sklearn.metrics import recall_score
 from sklearn.metrics import mean_squared_error
 from sklearn.metrics import confusion_matrix
 from sklearn.model_selection import cross_val_predict, KFold,GroupKFold
+from sklearn.svm import SVC
 
 
 from _thread import start_new_thread, allocate_lock
@@ -47,8 +48,8 @@ def write_txt(data):
 
 def clf_randomForest(X,target):
 
-    clf_rf = RandomForestClassifier(max_depth=2, random_state=0)
-
+    clf_rf = RandomForestClassifier(n_estimators=20, class_weight='balanced', max_features='auto', max_depth=3, min_samples_split=20 ,min_samples_leaf=20, max_leaf_nodes=40,min_weight_fraction_leaf=0.1)
+    #clf_svm = SVC(C=(2**7), kernel='rbf')
     kf = KFold(10, shuffle=True, random_state=1)
     
     ac_v = []
@@ -155,8 +156,6 @@ def test_lbp(imgs_dicom,target):
 
     print('Test LBP Finalizado.')
 
-    print('Test RC...')
-
     time.sleep(5)
 
 
@@ -171,8 +170,8 @@ def test_rc(imgs_dicom, target):
     for im in imgs_dicom:
         count += 1
         print('%i'%(count))
-        secs = crop_slices(im[0])
-        frc = rc.extract_texture(secs)
+        #secs = crop_slices(im[0])
+        frc = rc.extract_texture([im[0]])
         features_rc.append(frc)
         write_txt(features_rc)
 
@@ -195,9 +194,15 @@ def test_rc(imgs_dicom, target):
 
     print('Test RC Finalizado.')
 
-    time.sleep(5)
+def test_rc(target):
 
-def test_rc_preLoad(features_rc, target):
+    features_rc = []
+    with open("features.log", "r") as ins:
+        for line in ins:
+            line = line.strip("\n")
+            vals = line.split(' ')
+            vals = [float(i) for i in vals]
+            features_rc.append(vals)
 
     print('Test RC...')
 
@@ -216,8 +221,6 @@ def test_rc_preLoad(features_rc, target):
     print('Erro = %f'%(e))
 
     print('Test RC Finalizado.')
-
-    time.sleep(5)
     
 
 if __name__ == '__main__':
@@ -259,13 +262,13 @@ if __name__ == '__main__':
     #t2.join()
 
     
-    features = 
+    #features = 
     
-    test_rc_preLoad(imgs_dicom,datas['Contrast'])
+    #test_rc_preLoad(imgs_dicom,datas['Contrast'])
+    
+    test_rc(datas['Contrast'])
     
     test_lbp(imgs_dicom,datas['Contrast'])
-
-    
 
     write_csv(logs_metricas,'metricas')
 
