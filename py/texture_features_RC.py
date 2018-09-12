@@ -7,6 +7,9 @@ from oct2py import octave
 import math
 import collections
 from sklearn.feature_extraction import image
+import statistics
+from networkx.algorithms import clique
+from networkx.algorithms.community import k_clique_communities
 
 class texture_features_RC:
 
@@ -121,11 +124,12 @@ class texture_features_RC:
                     pxdic[cont]['pospx'] = [i, j]
                     pxdic[cont]['intespx'] = sec[i][j]
                     G.add_node(cont)
-                    for k in range(0, int(len(ind)/2)):
+                    for k in range(0, int(len(ind)/2) - 1):
                         d = 0
-                        d = (((ind[k] - i) ** 2) + ((ind[k+1] - j) ** 2)) + ((sec[i][j] - sec[ind[k]][ind[k+1]]) ** 2)
-                        w = ((d/(255)**2)-(r ** 2))
-                        log_w.append(w)
+                        #d = (((ind[k] - i) ** 2) + ((ind[k+1] - j) ** 2)) + ((sec[i][j] - sec[ind[k]][ind[k+1]]) ** 2)
+                        #w = ((d/(255)**2)-(r ** 2))
+                        d = math.sqrt(((ind[k] - i) ** 2) + ((ind[k+1] - j) ** 2))
+                        w = ((((ind[k] - i)**2) + ((ind[k+1] - j)**2)) + ((r**2)*((math.fabs(sec[i][j] - sec[ind[k]][ind[k+1]]))/255))/(2*(r**2)))
                         if d <= r and w <= t:
                             cont += 1
                             G.add_node(cont)
@@ -289,7 +293,11 @@ class texture_features_RC:
         
         
 
-        hdeg = nx.degree_histogram(G)
+        #hdeg = nx.degree_histogram(G)
+
+        degree_sequence = [d for n, d in G.degree()]
+        degreeCount = collections.Counter(degree_sequence)
+        deg, cnt = zip(*degreeCount.items())
 
         
         if opc == True:
@@ -305,7 +313,7 @@ class texture_features_RC:
             ax.set_xticklabels(deg)
             fig.savefig("hisgram_degree.png")
         
-        return hdeg
+        return deg
 
     def dens_prob(self, hst):
         
@@ -319,13 +327,17 @@ class texture_features_RC:
         return dens
 
 
-    def metrics_rc(self, d_prob):
+    def metrics_rc(self, G):
         
         mean = 0
         entropy = 0
         energy = 0
         contrast = 0
+        d_prob = []
         
+        d = self.calc_histDeg(G)
+        d_prob = self.dens_prob(d)
+    
         index = 0
         for k in d_prob:
             mean += index * k
@@ -338,7 +350,7 @@ class texture_features_RC:
         entropy *= -1
         
         return (mean,entropy,energy,contrast)
-        
+    
 
     #params:
     ## img: passa as secoes da imagem
@@ -354,20 +366,19 @@ class texture_features_RC:
  
         gfs = self.calc_weights_default(sections)
         
+        gfs = calc_weights(sections)
+    
         g_metric = []
-        
-        index = 0
+    
         for g in gfs:
             d_prob = []
-            d = self.calc_histDeg(g)
-            d_prob = self.dens_prob(d)
-            me,etr,enr,ctr = self.metrics_rc(d_prob)
+            d = calc_histDeg(g)
+            d_prob = dens_prob(d)
+            me,etr,enr,ctr = metrics_rc(d_prob)
             m_aux = [me, etr, enr, ctr]
             g_metric += m_aux
-        
-        
-        #print(g_metric)
-        
-        #print("Algoritmo finalizado!!!")
+
+    
+        print("Algoritmo finalizado!!!")
 
         return g_metric

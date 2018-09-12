@@ -9,6 +9,7 @@ import time
 from operator import itemgetter
 from datetime import datetime as dt
 from networkx import algorithms
+import os
 
 #classificacao
 from sklearn.ensemble import RandomForestClassifier
@@ -47,10 +48,54 @@ def write_txt(data):
        np.savetxt(out, data, '%4.6f')
 
 
+def load_patologias(path,rc):
+
+    file_list = []
+
+    dir_list = []
+
+    df = pd.DataFrame(columns=['files','class'])
+
+    
+    for root, pth, filenames in os.walk(path):
+        file_list.append(filenames)
+    
+    df_files = []
+    df_class = []
+
+
+    cnt = 0
+    c = 0
+    for files in file_list:
+        if cnt > 0:
+            for n in files:
+                if (n.find('.tif')) == -1:
+                    pass     
+                
+                else:
+                    print(n)
+                    clc = n[0]
+                    df_files.append(path+'/'+clc+'/'+n)
+                    df_class.append(c)
+            
+            c += 1
+        
+        else:
+            cnt += 1
+        
+        
+
+    
+    df['files'] = df_files
+    df['class'] = df_class
+    
+    return df   
+        
+
+
 def clf_randomForest(X,target):
 
     clf_rf = RandomForestClassifier(n_estimators=500)
-    #clf_svm = SVC(C=(2**7), kernel='rbf')
     kf = KFold(10, shuffle=True, random_state=1)
     
     ac_v = []
@@ -130,6 +175,10 @@ def crop_slices(imgray):
 def test_lbp(imgs_dicom,target):
 
     features_lbp = []
+
+    METHOD = 'uniform'
+    P = 50
+    R = 15
 
     print('Iniciando extração de caracteristicas com LBP...')
 
@@ -229,65 +278,33 @@ if __name__ == '__main__':
     
     print("Iniciando do algoritmo...")
 
-    datas = read_csv('overview.csv')
+    #datas = read_csv('overview.csv')
 
-    df = convert_df(datas['Contrast'])
+    #df = convert_df(datas['Contrast'])
 
-    datas['Contrast'] =  df
+    #datas['Contrast'] =  df
+
     
     rc = texture_features_RC()
 
-    METHOD = 'uniform'
-    P = 16
-    R = 2
+    df = load_patologias('../../KIMIA',rc)
 
-    imgs_dicom = []  
+    imgs_med = []  
 
     print("Carregando as imagens...")
     
-    for name in datas['dicom_name']:
-        imgs = rc.load_dicompy('../dataset/dicom_dir/%s'%(name))
-        imgs_dicom.append(imgs)
-    
-
-    #print("Executando Thread 1 - LBP ... ")
-    #t1 = threading.Thread(target=test_lbp,args=(imgs_dicom,datas['Contrast'][:4]))
-    #t1.start()
-
-    #print("Executando Thread 2 - RC ... ")
-    #t2 = threading.Thread(target=test_rc,args=(imgs_dicom,datas['Contrast'][:4]))
-    #t2.start()
-    
-
-    #t1.join()
-    #t2.join()
+    for name in df['files']:
+        imgs = rc.load_img(name)
+        imgs_med.append(imgs)
 
     
-    #features = 
-    
-    #test_rc_preLoad(imgs_dicom,datas['Contrast'])
+    #test_rc(imgs_dicom,datas['Contrast'])
 
-    test_lbp(imgs_dicom,datas['Contrast'])
+    test_lbp(imgs_med,df['class'])
     
-    test_rc(imgs_dicom,datas['Contrast'])
-    
-    #_test_rc(datas['Contrast'])
+    test_rc(imgs_med,df['class'])
 
-    write_csv(logs_metricas,'metricas')
-
-    #extracao de caracteristicas com o LBP e RC
-    #for im in imgs_dicom:
-    #    print('Calc RC')
-    #    secs = crop_slices(im[0])
-    #    frc = feature_vec = rc.extract_texture(secs)
-    #    print('Calc LBP')
-    #    lbp = ft.local_binary_pattern(im[0], P, R, METHOD)
-    #    flbp, _ = np.histogram(lbp, normed=True, bins=P + 2, range=(0, P + 2))
-    #    features_lbp.append(flbp)
-    #    features_rc.append(frc)
-
-    
-    
+    write_csv(logs_metricas,'metricas')    
 
 
     
