@@ -97,10 +97,6 @@ class texture_features_RC:
             col = np.size(sec,0)
             row = np.size(sec,1)
 
-            print('col %i'%(col))
-            print('row %i'%(row))
-    
-
             i = 0
             j = 0
         
@@ -131,10 +127,10 @@ class texture_features_RC:
                     G.add_node(cont)
                     for k,n in zip(ind_i,ind_j):
                         d = 0
-                        #d = (((ind[k] - i) ** 2) + ((ind[k+1] - j) ** 2)) + ((sec[i][j] - sec[ind[k]][ind[k+1]]) ** 2)
-                        #w = ((d/(255)**2)-(r ** 2))s
-                        d = math.sqrt(((k - i) ** 2) + ((n - j) ** 2))
-                        w = ((((k - i)**2) + ((n - j)**2)) + ((r**2)*((math.fabs(sec[i][j] - sec[k][n]))/255))/(2*(r**2)))
+                        d = ((k - i) ** 2) + ((n - j) ** 2) + ((sec[i][j] - sec[k][n]) ** 2)
+                        w = ((d/(255)**2)-(r ** 2))
+                        #d = math.sqrt(((k - i) ** 2) + ((n - j) ** 2))
+                        #w = ((((k - i)**2) + ((n - j)**2)) + ((r**2)*((math.fabs(sec[i][j] - sec[k][n]))/255))/(2*(r**2)))
                         if d <= r and w <= t:
                             cont += 1
                             G.add_node(cont)
@@ -256,7 +252,6 @@ class texture_features_RC:
                     #ind = [i+1, j, i, j+1, i+1, j+1]
                     ind = [i+1, j, i, j+1, i+1, j+1, i-1, j-1, i-1, j, i+1, j+1, i, j-1, i-1, j+1]
                     #ind = r * [i-1, j, i,j-1, i+1, j, i, j+1]
-                    print(j)
                     base = cont
                     pxdic[cont] = dict()
                     pxdic[cont]['pospx'] = [i, j]

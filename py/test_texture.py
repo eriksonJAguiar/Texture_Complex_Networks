@@ -19,6 +19,7 @@ from sklearn.metrics import mean_squared_error
 from sklearn.metrics import confusion_matrix
 from sklearn.model_selection import cross_val_predict, KFold,GroupKFold
 from sklearn.svm import SVC
+from sklearn.naive_bayes import MultinomialNB
 
 
 from _thread import start_new_thread, allocate_lock
@@ -26,11 +27,12 @@ import threading
 
 
 logs_metricas = []
+log_pred = pd.DataFrame()
 
 
 def write_csv(data,file):
 		df = pd.DataFrame(data)
-		df.to_csv('../logs/'+file+'.csv', mode='a', sep=';',index=False, header=False)
+		df.to_csv('../logs/'+file+'.csv', mode='a', sep=';',index=False, header=True)
 
 
 def read_csv(file):
@@ -47,10 +49,8 @@ def write_txt(data):
        np.savetxt(out, data, '%4.6f')
 
 
-def clf_randomForest(X,target):
+def clf_mensure(clf,X,target,name,tec):
 
-    clf_rf = RandomForestClassifier(n_estimators=500)
-    #clf_svm = SVC(C=(2**7), kernel='rbf')
     kf = KFold(10, shuffle=True, random_state=1)
     
     ac_v = []
@@ -67,8 +67,9 @@ def clf_randomForest(X,target):
         
         X_train, X_test = list(itemgetter(*train_index)(X)), list(itemgetter(*teste_index)(X))
         y_train, y_test = list(itemgetter(*train_index)(target)), list(itemgetter(*teste_index)(target))
-        clf_rf.fit(X_train,y_train)
-        pred = clf_rf.predict(X_test)
+        clf.fit(X_train,y_train)
+        pred = clf.predict(X_test)
+        predicts += pred.tolist()
         ac = accuracy_score(y_test, pred)
         p = precision_score(y_test, pred,average='weighted')
         r = recall_score(y_test, pred,average='weighted')
@@ -83,6 +84,11 @@ def clf_randomForest(X,target):
         e_v.append(e)
         
         
+
+    log_pred[tec+'_'+name] = predicts
+    
+    
+    
     ac = statistics.median(ac_v)
     p = statistics.median(p_v)
     f1 = statistics.median(f1_v)
@@ -141,23 +147,38 @@ def test_lbp(imgs_dicom,target):
     
     print('Test LBP...')
 
-    ac,p,f1,r,e = clf_randomForest(features_lbp,target)
+    clfs = []
+    name_clf = ['rf','svm','nv']
 
-    l = 'lbp', ac,p,f1,r,e, str(dt.now())
+    clfs.append(RandomForestClassifier(n_estimators=500))
+    clfs.append(SVC(C=500, kernel='linear'))
+    clfs.append(MultinomialNB())
 
-    logs_metricas.append(l)
+    
+    cnt = 0
+    for clf in clfs:
+        
+        print("Teste com algoritmos %s"%(name_clf[cnt]))
+        
+        ac,p,f1,r,e = clf_mensure(clf,features_lbp,target,name_clf[cnt],'lbp')
+        
+        l = 'lbp',name_clf[cnt],ac,p,f1,r,e, str(dt.now())
 
-    print('Acuracia = %f'%(ac))
+        logs_metricas.append(l)
 
-    print('Precisao = %f'%(p))
+        print('Acuracia = %f'%(ac))
 
-    print('Recall = %f'%(r))
+        print('Precisao = %f'%(p))
 
-    print('Erro = %f'%(e))
+        print('Recall = %f'%(r))
 
+        print('Erro = %f'%(e))
+
+        cnt += 1
+
+    
     print('Test LBP Finalizado.')
 
-    time.sleep(5)
 
 
 def test_rc(imgs_dicom, target):
@@ -167,10 +188,7 @@ def test_rc(imgs_dicom, target):
 
     print('Iniciando extração de caracteristicas com RC...')
 
-    count = 0
     for im in imgs_dicom:
-        count += 1
-        print('%i'%(count))
         #secs = crop_slices(im[0])
         frc = rc.extract_texture([im[0]])
         features_rc.append(frc)
@@ -179,19 +197,34 @@ def test_rc(imgs_dicom, target):
     
     print('Test RC...')
 
-    ac,p,f1,r,e = clf_randomForest(features_rc,target)
+    clfs = []
+    name_clf = ['rf','svm','nv']
 
-    l = 'rc', ac,p,f1,r,e, str(dt.now())
+    clfs.append(RandomForestClassifier(n_estimators=500))
+    clfs.append(SVC(C=(2**7), kernel='rbf'))
+    clfs.append(MultinomialNB())
 
-    logs_metricas.append(l)
+    
+    cnt = 0
+    for clf in clfs:
+        
+        print("Teste com algoritmo %s"%(name_clf[cnt]))
+        
+        ac,p,f1,r,e = clf_mensure(clf,features_rc,target,name_clf[cnt],'rc')
+        
+        l = 'rc', name_clf[cnt], ac,p,f1,r,e, str(dt.now())
 
-    print('Acuracia = %f'%(ac))
+        logs_metricas.append(l)
 
-    print('Precisao = %f'%(p))
+        print('Acuracia = %f'%(ac))
 
-    print('Recall = %f'%(r))
+        print('Precisao = %f'%(p))
 
-    print('Erro = %f'%(e))
+        print('Recall = %f'%(r))
+
+        print('Erro = %f'%(e))
+
+        cnt += 1
 
     print('Test RC Finalizado.')
 
@@ -207,19 +240,34 @@ def _test_rc(target):
 
     print('Test RC...')
 
-    ac,p,f1,r,e = clf_randomForest(features_rc,target)
+    clfs = []
+    name_clf = ['rf','svm','nv']
 
-    l = 'rc', ac,p,f1,r,e, str(dt.now())
+    clfs.append(RandomForestClassifier(n_estimators=500))
+    clfs.append(SVC(C=(2**7), kernel='rbf'))
+    clfs.append(MultinomialNB())
 
-    logs_metricas.append(l)
+    
+    cnt = 0
+    for clf in clfs:
+        
+        print("Teste com algoritmo %s"%(name_clf[cnt]))
+        
+        ac,p,f1,r,e = clf_mensure(clf,features_rc,target,name_clf[cnt],'rc')
+        
+        l = 'rc', name_clf[cnt], ac,p,f1,r,e, str(dt.now())
 
-    print('Acuracia = %f'%(ac))
+        logs_metricas.append(l)
 
-    print('Precisao = %f'%(p))
+        print('Acuracia = %f'%(ac))
 
-    print('Recall = %f'%(r))
+        print('Precisao = %f'%(p))
 
-    print('Erro = %f'%(e))
+        print('Recall = %f'%(r))
+
+        print('Erro = %f'%(e))
+
+        cnt += 1
 
     print('Test RC Finalizado.')
     
@@ -255,11 +303,13 @@ if __name__ == '__main__':
 
     test_lbp(imgs_dicom,datas['Contrast'])
     
-    test_rc(imgs_dicom,datas['Contrast'])
+    #test_rc(imgs_dicom,datas['Contrast'])
     
-    #_test_rc(datas['Contrast'])
+    _test_rc(datas['Contrast'])
 
     write_csv(logs_metricas,'metricas')
+
+    write_csv(log_pred,'predicoes')
 
     #extracao de caracteristicas com o LBP e RC
     #for im in imgs_dicom:
