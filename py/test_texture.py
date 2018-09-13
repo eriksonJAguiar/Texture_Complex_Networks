@@ -249,20 +249,6 @@ if __name__ == '__main__':
         imgs = rc.load_dicompy('../dataset/dicom_dir/%s'%(name))
         imgs_dicom.append(imgs)
     
-
-    #print("Executando Thread 1 - LBP ... ")
-    #t1 = threading.Thread(target=test_lbp,args=(imgs_dicom,datas['Contrast'][:4]))
-    #t1.start()
-
-    #print("Executando Thread 2 - RC ... ")
-    #t2 = threading.Thread(target=test_rc,args=(imgs_dicom,datas['Contrast'][:4]))
-    #t2.start()
-    
-
-    #t1.join()
-    #t2.join()
-
-    
     #features = 
     
     #test_rc_preLoad(imgs_dicom,datas['Contrast'])

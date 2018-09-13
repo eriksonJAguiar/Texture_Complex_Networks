@@ -73,7 +73,7 @@ def load_patologias(path,rc):
                     pass     
                 
                 else:
-                    print(n)
+                    #print(n)
                     clc = n[0]
                     df_files.append(path+'/'+clc+'/'+n)
                     df_class.append(c)
@@ -95,7 +95,7 @@ def load_patologias(path,rc):
 
 def clf_randomForest(X,target):
 
-    clf_rf = RandomForestClassifier(n_estimators=500)
+    clf_rf = RandomForestClassifier(n_estimators=1000,criterion='gini',max_features='log2')
     kf = KFold(10, shuffle=True, random_state=1)
     
     ac_v = []
@@ -187,7 +187,8 @@ def test_lbp(imgs_dicom,target):
         lbp = ft.local_binary_pattern(im[0], P, R, METHOD)
         flbp, _ = np.histogram(lbp, normed=True, bins=P + 2, range=(0, P + 2))
         features_lbp.append(flbp.tolist())    
-    
+
+
     print('Test LBP...')
 
     ac,p,f1,r,e = clf_randomForest(features_lbp,target)
@@ -300,9 +301,11 @@ if __name__ == '__main__':
     
     #test_rc(imgs_dicom,datas['Contrast'])
 
+    test_rc(imgs_med,df['class'])
+    
     test_lbp(imgs_med,df['class'])
     
-    test_rc(imgs_med,df['class'])
+    
 
     write_csv(logs_metricas,'metricas')    
 

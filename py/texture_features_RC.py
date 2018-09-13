@@ -94,9 +94,13 @@ class texture_features_RC:
         log_w = []
         for sec in sections:
             #print('Iniciando o grafo da secção %i ...'%(s))
-            row = np.size(sec,0)
-            col = np.size(sec,1)
-        
+            col = np.size(sec,0)
+            row = np.size(sec,1)
+
+            print('col %i'%(col))
+            print('row %i'%(row))
+    
+
             i = 0
             j = 0
         
@@ -109,33 +113,34 @@ class texture_features_RC:
         
             # pospx = [i,j] e intespx. representando o pixel
             pxdic = dict()
-        
-        
+
             #print("Iniciando calculo dos pesos...")
         
             cont = 0
-            for i in range(1, row - 2):
-                for j in range(1, col - 2):
+            for j in range(1, (row - 2)):
+                for i in range(1, (col - 2)):
                     #ind = [i+1, j, i, j+1, i+1, j+1]
-                    ind = [i+1, j, i, j+1, i+1, j+1, i-1, j-1, i-1, j, i+1, j+1, i, j-1, i-1, j+1]
+                    #ind_i = [i+1, j, i, j+1, i+1, j+1, i-1, j-1, i-1, j, i+1, j+1, i, j-1, i-1, j+1]
+                    ind_i = [i+1, i, i+1, i-1, i-1,i, i-1, i+1]
+                    ind_j = [j, j+1, j+1, j-1, j, j-1, j+1, j-1]
                     #ind = r * [i-1, j, i,j-1, i+1, j, i, j+1]
                     base = cont
                     pxdic[cont] = dict()
                     pxdic[cont]['pospx'] = [i, j]
                     pxdic[cont]['intespx'] = sec[i][j]
                     G.add_node(cont)
-                    for k in range(0, int(len(ind)/2) - 1):
+                    for k,n in zip(ind_i,ind_j):
                         d = 0
                         #d = (((ind[k] - i) ** 2) + ((ind[k+1] - j) ** 2)) + ((sec[i][j] - sec[ind[k]][ind[k+1]]) ** 2)
-                        #w = ((d/(255)**2)-(r ** 2))
-                        d = math.sqrt(((ind[k] - i) ** 2) + ((ind[k+1] - j) ** 2))
-                        w = ((((ind[k] - i)**2) + ((ind[k+1] - j)**2)) + ((r**2)*((math.fabs(sec[i][j] - sec[ind[k]][ind[k+1]]))/255))/(2*(r**2)))
+                        #w = ((d/(255)**2)-(r ** 2))s
+                        d = math.sqrt(((k - i) ** 2) + ((n - j) ** 2))
+                        w = ((((k - i)**2) + ((n - j)**2)) + ((r**2)*((math.fabs(sec[i][j] - sec[k][n]))/255))/(2*(r**2)))
                         if d <= r and w <= t:
                             cont += 1
                             G.add_node(cont)
                             pxdic[cont] = dict()
-                            pxdic[cont]['pospx'] = [k, k+1]
-                            pxdic[cont]['intespx'] = sec[k][k+1]
+                            pxdic[cont]['pospx'] = [k, n]
+                            pxdic[cont]['intespx'] = sec[k][n]
                             G.add_edge(base, cont, weight=w)
                     
             
@@ -251,6 +256,7 @@ class texture_features_RC:
                     #ind = [i+1, j, i, j+1, i+1, j+1]
                     ind = [i+1, j, i, j+1, i+1, j+1, i-1, j-1, i-1, j, i+1, j+1, i, j-1, i-1, j+1]
                     #ind = r * [i-1, j, i,j-1, i+1, j, i, j+1]
+                    print(j)
                     base = cont
                     pxdic[cont] = dict()
                     pxdic[cont]['pospx'] = [i, j]
@@ -293,11 +299,11 @@ class texture_features_RC:
         
         
 
-        #hdeg = nx.degree_histogram(G)
+        hdeg = nx.degree_histogram(G)
 
-        degree_sequence = [d for n, d in G.degree()]
-        degreeCount = collections.Counter(degree_sequence)
-        deg, cnt = zip(*degreeCount.items())
+        #degree_sequence = [d for n, d in G.degree()]
+        #degreeCount = collections.Counter(degree_sequence)
+        #deg, cnt = zip(*degreeCount.items())
 
         
         if opc == True:
@@ -313,7 +319,7 @@ class texture_features_RC:
             ax.set_xticklabels(deg)
             fig.savefig("hisgram_degree.png")
         
-        return deg
+        return hdeg
 
     def dens_prob(self, hst):
         
@@ -365,16 +371,11 @@ class texture_features_RC:
         sections = img
  
         gfs = self.calc_weights_default(sections)
-        
-        gfs = calc_weights(sections)
     
         g_metric = []
     
         for g in gfs:
-            d_prob = []
-            d = calc_histDeg(g)
-            d_prob = dens_prob(d)
-            me,etr,enr,ctr = metrics_rc(d_prob)
+            me,etr,enr,ctr = self.metrics_rc(g)
             m_aux = [me, etr, enr, ctr]
             g_metric += m_aux
 
