@@ -137,6 +137,9 @@ def test_lbp(imgs_dicom,target):
 
     features_lbp = []
 
+    ilbp = time.time()
+    
+    
     print('Iniciando extração de caracteristicas com LBP...')
 
     for im in imgs_dicom:
@@ -144,6 +147,11 @@ def test_lbp(imgs_dicom,target):
         lbp = ft.local_binary_pattern(im[0], P, R, METHOD)
         flbp, _ = np.histogram(lbp, normed=True, bins=P + 2, range=(0, P + 2))
         features_lbp.append(flbp.tolist())    
+    
+    
+    flbp = time.time()
+
+    print("LBP Time - %f"%(flbp - ilbp))
     
     print('Test LBP...')
 
@@ -188,11 +196,18 @@ def test_rc(imgs_dicom, target):
 
     print('Iniciando extração de caracteristicas com RC...')
 
+    irc = time.time()
+
     for im in imgs_dicom:
         #secs = crop_slices(im[0])
         frc = rc.extract_texture([im[0]])
         features_rc.append(frc)
         write_txt(features_rc)
+
+    
+    frc = time.time()
+
+    print("RC Time - %f"%(frc-irc))
 
     
     print('Test RC...')
@@ -231,6 +246,7 @@ def test_rc(imgs_dicom, target):
 def _test_rc(target):
 
     features_rc = []
+    
     with open("features_.log", "r") as ins:
         for line in ins:
             line = line.strip("\n")
@@ -301,11 +317,18 @@ if __name__ == '__main__':
     
     #test_rc_preLoad(imgs_dicom,datas['Contrast'])
 
+    
     test_lbp(imgs_dicom,datas['Contrast'])
     
-    #test_rc(imgs_dicom,datas['Contrast'])
+    irc = time.time()
+
+    test_rc(imgs_dicom,datas['Contrast'])
+
+    frc = time.time()
+
+    print("RC Time - %f"%(frc-irc))
     
-    _test_rc(datas['Contrast'])
+    #_test_rc(datas['Contrast'])
 
     write_csv(logs_metricas,'metricas')
 

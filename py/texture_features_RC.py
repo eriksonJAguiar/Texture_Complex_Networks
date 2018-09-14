@@ -375,6 +375,6 @@ class texture_features_RC:
             g_metric += m_aux
 
     
-        print("Algoritmo finalizado!!!")
+        #print("Algoritmo finalizado!!!")
 
         return g_metric
