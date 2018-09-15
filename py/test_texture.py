@@ -20,6 +20,7 @@ from sklearn.metrics import confusion_matrix
 from sklearn.model_selection import cross_val_predict, KFold,GroupKFold
 from sklearn.svm import SVC
 from sklearn.naive_bayes import MultinomialNB
+from sklearn import linear_model
 
 
 from _thread import start_new_thread, allocate_lock
@@ -138,6 +139,10 @@ def test_lbp(imgs_dicom,target):
     features_lbp = []
 
     ilbp = time.time()
+
+    METHOD = 'nri_uniform'
+    P = 5
+    R = 3
     
     
     print('Iniciando extração de caracteristicas com LBP...')
@@ -146,7 +151,9 @@ def test_lbp(imgs_dicom,target):
         #print('Calc LBP')
         lbp = ft.local_binary_pattern(im[0], P, R, METHOD)
         flbp, _ = np.histogram(lbp, normed=True, bins=P + 2, range=(0, P + 2))
-        features_lbp.append(flbp.tolist())    
+        hist, bin_edges = np.histogram(im, density=True)
+        f = flbp.tolist() + hist.tolist()
+        features_lbp.append(f)    
     
     
     flbp = time.time()
@@ -156,11 +163,13 @@ def test_lbp(imgs_dicom,target):
     print('Test LBP...')
 
     clfs = []
-    name_clf = ['rf','svm','nv']
+    name_clf = ['rf','svm','nv','sgdc']
 
-    clfs.append(RandomForestClassifier(n_estimators=500))
-    clfs.append(SVC(C=500, kernel='linear'))
+    clfs.append(RandomForestClassifier(n_estimators=500,n_jobs=2,criterion='gini'))
+    clfs.append(SVC(C=2 , kernel='poly'))
     clfs.append(MultinomialNB())
+    clfs.append(linear_model.SGDClassifier(loss='log',alpha=0.00001,learning_rate='optimal'))
+    
 
     
     cnt = 0
@@ -201,7 +210,9 @@ def test_rc(imgs_dicom, target):
     for im in imgs_dicom:
         #secs = crop_slices(im[0])
         frc = rc.extract_texture([im[0]])
-        features_rc.append(frc)
+        hist, bin_edges = np.histogram(im, density=True)
+        f = frc + hist.tolist()
+        features_rc.append(f)
         write_txt(features_rc)
 
     
@@ -257,11 +268,13 @@ def _test_rc(target):
     print('Test RC...')
 
     clfs = []
-    name_clf = ['rf','svm','nv']
 
-    clfs.append(RandomForestClassifier(n_estimators=500))
-    clfs.append(SVC(C=(2**7), kernel='rbf'))
+    name_clf = ['rf','svm','nv','sgdc']
+
+    clfs.append(RandomForestClassifier(n_estimators=500,n_jobs=2,criterion='gini'))
+    clfs.append(SVC(C=2 , kernel='poly'))
     clfs.append(MultinomialNB())
+    clfs.append(linear_model.SGDClassifier(loss='log',alpha=0.00001,learning_rate='optimal'))
 
     
     cnt = 0
@@ -301,9 +314,6 @@ if __name__ == '__main__':
     
     rc = texture_features_RC()
 
-    METHOD = 'uniform'
-    P = 16
-    R = 2
 
     imgs_dicom = []  
 
@@ -322,7 +332,8 @@ if __name__ == '__main__':
     
     irc = time.time()
 
-    test_rc(imgs_dicom,datas['Contrast'])
+    #test_rc(imgs_dicom,datas['Contrast'])
+    _test_rc(datas['Contrast'])
 
     frc = time.time()
 

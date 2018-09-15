@@ -186,7 +186,10 @@ def test_lbp(imgs_dicom,target):
         #print('Calc LBP')
         lbp = ft.local_binary_pattern(im[0], P, R, METHOD)
         flbp, _ = np.histogram(lbp, normed=True, bins=P + 2, range=(0, P + 2))
-        features_lbp.append(flbp.tolist())    
+        hist, bin_edges = np.histogram(im, density=True)
+        f = flbp.tolist() + hist.tolist()
+        features_lbp.append(f)
+            
 
 
     print('Test LBP...')
@@ -222,8 +225,10 @@ def test_rc(imgs_dicom, target):
         count += 1
         print('%i'%(count))
         #secs = crop_slices(im[0])
+        hist, bin_edges = np.histogram(im, density=True)
         frc = rc.extract_texture([im[0]])
-        features_rc.append(frc)
+        f = frc + hist.tolist()
+        features_rc.append(f)
         write_txt(features_rc)
 
     
@@ -299,7 +304,7 @@ if __name__ == '__main__':
         imgs_med.append(imgs)
 
     
-    #test_rc(imgs_dicom,datas['Contrast'])
+    #test_rc(imgs_med,df['ca'])
 
     test_rc(imgs_med,df['class'])
     
